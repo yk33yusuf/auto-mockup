@@ -137,3 +137,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# Uploads
+uploads/
+*.png
+*.jpg
+*.jpeg
+
+# Environment
+.env
