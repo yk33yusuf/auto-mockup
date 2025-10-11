@@ -105,6 +105,103 @@ app.post('/create-mockup', upload.fields([
   }
 });
 
+// Template ile mockup oluşturma endpoint'i
+app.post('/create-mockup-template', upload.single('design'), async (req, res) => {
+  let designPath;
+  
+  try {
+    const designFile = req.file;
+    const templateName = req.body.template;
+
+    if (!designFile) {
+      return res.status(400).json({ error: 'Design file is required' });
+    }
+
+    if (!templateName) {
+      return res.status(400).json({ error: 'Template name is required' });
+    }
+
+    designPath = designFile.path;
+    const mockupPath = path.join(__dirname, 'templates', `${templateName}.png`);
+    const paramsPath = path.join(__dirname, 'templates', `${templateName}.json`);
+
+    // Mockup var mı kontrol et
+    try {
+      await fs.access(mockupPath);
+    } catch {
+      return res.status(404).json({ 
+        error: 'Template not found',
+        template: templateName
+      });
+    }
+
+    // Parametreleri yükle
+    let params = {
+      x: null,
+      y: null,
+      width: null,
+      height: null,
+      rotation: 0
+    };
+
+    try {
+      const paramsData = await fs.readFile(paramsPath, 'utf8');
+      params = { ...params, ...JSON.parse(paramsData) };
+    } catch {
+      console.log('No params file, using defaults');
+    }
+
+    // Mockup oluştur
+    const mockupImage = sharp(mockupPath);
+    const designImage = sharp(designPath);
+
+    const mockupMeta = await mockupImage.metadata();
+    const designMeta = await designImage.metadata();
+
+    const targetWidth = params.width || designMeta.width;
+    const targetHeight = params.height || designMeta.height;
+    const x = params.x !== null ? params.x : Math.floor((mockupMeta.width - targetWidth) / 2);
+    const y = params.y !== null ? params.y : Math.floor((mockupMeta.height - targetHeight) / 2);
+
+    let processedDesign = designImage.resize(targetWidth, targetHeight, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    });
+
+    if (params.rotation !== 0) {
+      processedDesign = processedDesign.rotate(params.rotation, {
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      });
+    }
+
+    const designBuffer = await processedDesign.toBuffer();
+
+    const result = await mockupImage
+      .composite([{
+        input: designBuffer,
+        left: x,
+        top: y
+      }])
+      .png({ quality: 95 })
+      .toBuffer();
+
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Disposition': `attachment; filename="${templateName}-${Date.now()}.png"`
+    });
+    res.send(result);
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to create mockup',
+      details: error.message 
+    });
+  } finally {
+    if (designPath) await fs.unlink(designPath).catch(() => {});
+  }
+});
+
 app.get('/templates', async (req, res) => {
   try {
     const templatesDir = path.join(__dirname, 'templates');
