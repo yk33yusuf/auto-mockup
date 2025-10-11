@@ -150,5 +150,5 @@ uploads/
 
 # Templates
 templates/*-box.png        ← Box dosyalarını GitHub'a yükleme
-templates/*.png            ← PNG'leri GitHub'a yükleme (opsiyonel)
+!templates/*.png
 !templates/.gitkeep
