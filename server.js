@@ -105,6 +105,33 @@ app.post('/create-mockup', upload.fields([
   }
 });
 
+app.get('/templates', async (req, res) => {
+  try {
+    const templatesDir = path.join(__dirname, 'templates');
+    
+    await fs.mkdir(templatesDir, { recursive: true });
+    
+    const files = await fs.readdir(templatesDir);
+    const templates = files
+      .filter(f => f.endsWith('.png'))
+      .map(f => {
+        const name = f.replace('.png', '');
+        const hasParams = files.includes(`${name}.json`);
+        return { name, hasParams };
+      });
+    
+    res.json({ 
+      count: templates.length,
+      templates 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to list templates',
+      details: error.message 
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Auto Mockup API running on port ${PORT}`);
 });
