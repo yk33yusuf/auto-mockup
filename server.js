@@ -229,6 +229,74 @@ app.get('/templates', async (req, res) => {
   }
 });
 
+app.post('/adjust-design', upload.single('design'), async (req, res) => {
+  let designPath;
+  
+  try {
+    const designFile = req.file;
+    const template = req.body.template;
+
+    if (!designFile) {
+      return res.status(400).json({ error: 'Design file required' });
+    }
+
+    designPath = designFile.path;
+    
+    // Koyu mockuplar - renkleri tersine çevir
+    const darkMockups = ['pepper', 'black', 'espresso'];
+    const needsInvert = darkMockups.some(dark => template.includes(dark));
+    
+    let result;
+    
+    if (needsInvert) {
+      // Sadece renkleri ters çevir (yapıyı koru)
+      const { data, info } = await sharp(designPath)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const invertedPixels = Buffer.from(data);
+      
+      for (let i = 0; i < invertedPixels.length; i += info.channels) {
+        const alpha = invertedPixels[i + 3];
+        
+        // Sadece opak pikselleri ters çevir (şeffaf alanları koru)
+        if (alpha > 50) {
+          invertedPixels[i] = 255 - invertedPixels[i];       // R
+          invertedPixels[i + 1] = 255 - invertedPixels[i + 1]; // G
+          invertedPixels[i + 2] = 255 - invertedPixels[i + 2]; // B
+          // Alpha kalsın (i + 3)
+        }
+      }
+
+      result = await sharp(invertedPixels, {
+        raw: {
+          width: info.width,
+          height: info.height,
+          channels: info.channels
+        }
+      })
+      .png()
+      .toBuffer();
+      
+    } else {
+      // Diğer mockuplar için olduğu gibi
+      result = await sharp(designPath)
+        .png()
+        .toBuffer();
+    }
+
+    res.set('Content-Type', 'image/png');
+    res.send(result);
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (designPath) await fs.unlink(designPath).catch(() => {});
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Auto Mockup API running on port ${PORT}`);
 });
