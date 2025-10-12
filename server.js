@@ -249,11 +249,45 @@ app.post('/adjust-design', upload.single('design'), async (req, res) => {
     let result;
     
     if (needsInvert) {
-      // Sharp'ın negate fonksiyonu ile renkleri tersine çevir
-      result = await sharp(designPath)
-        .negate({ alpha: false })  // alpha kanalını koru
-        .png()
-        .toBuffer();
+      // Sadece koyu tonları beyazlat (turuncu koru)
+      const { data, info } = await sharp(designPath)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const pixels = Buffer.from(data);
+      
+      for (let i = 0; i < pixels.length; i += info.channels) {
+        const alpha = pixels[i + 3];
+        
+        if (alpha > 50) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          
+          // Parlaklık hesapla
+          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+          
+          // Sadece çok koyu renkleri beyazlat (brightness < 80)
+          if (brightness < 80) {
+            pixels[i] = 255;     // R → Beyaz
+            pixels[i + 1] = 255; // G → Beyaz
+            pixels[i + 2] = 255; // B → Beyaz
+          }
+          // Turuncu ve orta tonlar değişmez
+        }
+      }
+
+      result = await sharp(pixels, {
+        raw: {
+          width: info.width,
+          height: info.height,
+          channels: info.channels
+        }
+      })
+      .png()
+      .toBuffer();
+      
     } else {
       // Diğer mockuplar için olduğu gibi
       result = await sharp(designPath)
