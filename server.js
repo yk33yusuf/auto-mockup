@@ -269,7 +269,7 @@ app.post('/adjust-design', upload.single('design'), async (req, res) => {
           const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
           
           // Sadece çok koyu renkleri beyazlat (brightness < 80)
-          if (brightness < 80) {
+          if (brightness < 150) {
             pixels[i] = 255;     // R → Beyaz
             pixels[i + 1] = 255; // G → Beyaz
             pixels[i + 2] = 255; // B → Beyaz
