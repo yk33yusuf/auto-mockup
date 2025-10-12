@@ -242,43 +242,18 @@ app.post('/adjust-design', upload.single('design'), async (req, res) => {
 
     designPath = designFile.path;
     
-    // Koyu mockuplar - renkleri tersine çevir
+    // Koyu mockuplar listesi
     const darkMockups = ['pepper', 'black', 'espresso'];
     const needsInvert = darkMockups.some(dark => template.includes(dark));
     
     let result;
     
     if (needsInvert) {
-      // Sadece renkleri ters çevir (yapıyı koru)
-      const { data, info } = await sharp(designPath)
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-
-      const invertedPixels = Buffer.from(data);
-      
-      for (let i = 0; i < invertedPixels.length; i += info.channels) {
-        const alpha = invertedPixels[i + 3];
-        
-        // Sadece opak pikselleri ters çevir (şeffaf alanları koru)
-        if (alpha > 50) {
-          invertedPixels[i] = 255 - invertedPixels[i];       // R
-          invertedPixels[i + 1] = 255 - invertedPixels[i + 1]; // G
-          invertedPixels[i + 2] = 255 - invertedPixels[i + 2]; // B
-          // Alpha kalsın (i + 3)
-        }
-      }
-
-      result = await sharp(invertedPixels, {
-        raw: {
-          width: info.width,
-          height: info.height,
-          channels: info.channels
-        }
-      })
-      .png()
-      .toBuffer();
-      
+      // Sharp'ın negate fonksiyonu ile renkleri tersine çevir
+      result = await sharp(designPath)
+        .negate({ alpha: false })  // alpha kanalını koru
+        .png()
+        .toBuffer();
     } else {
       // Diğer mockuplar için olduğu gibi
       result = await sharp(designPath)
