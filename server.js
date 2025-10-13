@@ -242,54 +242,20 @@ app.post('/adjust-design', upload.single('design'), async (req, res) => {
 
     designPath = designFile.path;
     
-    // Koyu mockuplar listesi
     const darkMockups = ['pepper', 'black', 'espresso'];
     const needsInvert = darkMockups.some(dark => template.includes(dark));
     
     let result;
     
     if (needsInvert) {
-      // Sadece koyu tonları beyazlat (turuncu koru)
-      const { data, info } = await sharp(designPath)
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-
-      const pixels = Buffer.from(data);
-      
-      for (let i = 0; i < pixels.length; i += info.channels) {
-        const alpha = pixels[i + 3];
-        
-        if (alpha > 50) {
-          const r = pixels[i];
-          const g = pixels[i + 1];
-          const b = pixels[i + 2];
-          
-          // Parlaklık hesapla
-          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-          
-          // Sadece çok koyu renkleri beyazlat (brightness < 80)
-          if (brightness < 150) {
-            pixels[i] = 255;     // R → Beyaz
-            pixels[i + 1] = 255; // G → Beyaz
-            pixels[i + 2] = 255; // B → Beyaz
-          }
-          // Turuncu ve orta tonlar değişmez
-        }
-      }
-
-      result = await sharp(pixels, {
-        raw: {
-          width: info.width,
-          height: info.height,
-          channels: info.channels
-        }
-      })
-      .png()
-      .toBuffer();
-      
+      // Yaklaşım: Level adjustment ile siyahı beyaza çevir
+      result = await sharp(designPath)
+        .linear(1.5, -(128 * 0.5))  // Kontrast artır + parlaklık
+        .threshold(40)              // Eşik: < 40 → siyah, > 40 → beyaz
+        .negate({ alpha: false })   // Tersine çevir
+        .png()
+        .toBuffer();
     } else {
-      // Diğer mockuplar için olduğu gibi
       result = await sharp(designPath)
         .png()
         .toBuffer();
