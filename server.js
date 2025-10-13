@@ -229,6 +229,8 @@ app.get('/templates', async (req, res) => {
   }
 });
 
+const chroma = require('chroma-js');
+
 app.post('/adjust-design', upload.single('design'), async (req, res) => {
   let designPath;
   
@@ -245,24 +247,52 @@ app.post('/adjust-design', upload.single('design'), async (req, res) => {
     const darkMockups = ['pepper', 'black', 'espresso'];
     const needsInvert = darkMockups.some(dark => template.includes(dark));
     
-    let result;
-    
     if (needsInvert) {
-      // Yaklaşım: Level adjustment ile siyahı beyaza çevir
-      result = await sharp(designPath)
-        .linear(1.5, -(128 * 0.5))  // Kontrast artır + parlaklık
-        .threshold(40)              // Eşik: < 40 → siyah, > 40 → beyaz
-        .negate({ alpha: false })   // Tersine çevir
-        .png()
-        .toBuffer();
-    } else {
-      result = await sharp(designPath)
-        .png()
-        .toBuffer();
-    }
+      const { data, info } = await sharp(designPath)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
 
-    res.set('Content-Type', 'image/png');
-    res.send(result);
+      const pixels = Buffer.from(data);
+      
+      for (let i = 0; i < pixels.length; i += info.channels) {
+        const alpha = pixels[i + 3];
+        
+        if (alpha > 50) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          
+          // Chroma ile renk analizi
+          const color = chroma([r, g, b]);
+          const luminance = color.luminance();
+          
+          // Sadece çok koyu renkleri (luminance < 0.3) beyazlat
+          if (luminance < 0.3) {
+            pixels[i] = 255;
+            pixels[i + 1] = 255;
+            pixels[i + 2] = 255;
+          }
+        }
+      }
+
+      const result = await sharp(pixels, {
+        raw: {
+          width: info.width,
+          height: info.height,
+          channels: info.channels
+        }
+      })
+      .png()
+      .toBuffer();
+      
+      res.set('Content-Type', 'image/png');
+      res.send(result);
+    } else {
+      const result = await sharp(designPath).png().toBuffer();
+      res.set('Content-Type', 'image/png');
+      res.send(result);
+    }
 
   } catch (error) {
     console.error('Error:', error);
