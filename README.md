@@ -2,12 +2,10 @@
 
 Automated t-shirt mockup generator API for n8n workflows.
 
-## 🚀 Quick Start
-
-## Yeni Mockup eklemek için adımlar:
+## 🚀 Yeni Mockup eklemek için adımlar:
 
 
-### 🚀 Terminalde aşağıdaki kodları çalıştır:
+1- Vs Code boş bir klasör aç ve Terminalde aşağıdaki kodları çalıştır:
 
 ```bash
 git clone https://github.com/yk33yusuf/auto-mockup.git
@@ -21,13 +19,13 @@ cd auto-mockup
 npm install
 ```
 
-1-Mockup içine dizaynın geleceği yere bir kutu yerleştir. Kutu rengi şu olmalı: #FF00FF<br>
-2-Mockup ların isimlerinin sonu "-box" olmalı
-3-Hem orjinal mockup hem de dizaynı yerleştireceğin dosyaları templates klasörüne at. Şu kodu çalıştır:
+2-Mockup içine dizaynın geleceği yere bir kutu yerleştir. Kutu rengi şu olmalı: #FF00FF<br>
+3-Mockup ların isimlerinin sonu "-box" olmalı
+4-Hem orjinal mockup hem de dizaynı yerleştireceğin dosyaları templates klasörüne at. Şu kodu çalıştır:
 
 ```bash
 node processAllTemplates.js
 ```
 
-4-İş bitiminde sonu box ile biten dosyalı silebilirsin.<br>
-5-Source Control'ü Aç ve yayınla  Ctrl + Shift + G<br>
+5-İş bitiminde sonu box ile biten dosyalı silebilirsin.<br>
+6-Source Control'ü Aç ve yayınla  Ctrl + Shift + G<br>
