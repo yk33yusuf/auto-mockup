@@ -20,7 +20,7 @@ npm install
 ```
 
 2-Mockup içine dizaynın geleceği yere bir kutu yerleştir. Kutu rengi şu olmalı: #FF00FF<br>
-3-Mockup ların isimlerinin sonu "-box" olmalı
+3-Mockup ların isimlerinin sonu "-box" olmalı<br>
 4-Hem orjinal mockup hem de dizaynı yerleştireceğin dosyaları templates klasörüne at. Şu kodu çalıştır:
 
 ```bash
