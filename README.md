@@ -15,12 +15,16 @@ Automated t-shirt mockup generator API for n8n workflows.
 
 ```bash
 git clone https://github.com/yk33yusuf/auto-mockup.git
+```
 
 ```bash
 cd auto-mockup
+```
 
 ```bash
 npm install
+```
 
 ```bash
 node processAllTemplates.js
+```
